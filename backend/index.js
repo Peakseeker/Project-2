@@ -6,10 +6,12 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+const workspaceRoutes = require("./routes/workspaceRoutes");
 
 app.get("/", (req, res) => {
     res.send("Backend is running successfully!");
 });
+app.use("/api/workspaces", workspaceRoutes);
 
 const PORT = process.env.PORT || 5000;
 
