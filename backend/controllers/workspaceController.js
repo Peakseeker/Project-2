@@ -29,6 +29,23 @@ const createWorkspace = async (req, res) => {
   }
 };
 
+const getWorkspaces = async (req, res) => {
+  try {
+    const workspaces = await Workspace.find();
+
+    res.status(200).json({
+      message: "Workspaces fetched successfully",
+      workspaces,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch workspaces",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createWorkspace,
+  getWorkspaces,
 };
