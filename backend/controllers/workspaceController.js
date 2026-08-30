@@ -45,7 +45,6 @@ const getWorkspaces = async (req, res) => {
   }
 };
 
-// Get a single workspace by ID
 const getWorkspaceById = async (req, res) => {
   try {
     const workspace = await Workspace.findById(req.params.id);
@@ -68,8 +67,38 @@ const getWorkspaceById = async (req, res) => {
   }
 };
 
+// Update Workspace
+const updateWorkspace = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    const workspace = await Workspace.findByIdAndUpdate(
+      req.params.id,
+      { name, description },
+      { new: true, runValidators: true }
+    );
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Workspace updated successfully",
+      workspace,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to update workspace",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createWorkspace,
   getWorkspaces,
   getWorkspaceById,
+  updateWorkspace,
 };
