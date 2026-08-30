@@ -45,7 +45,31 @@ const getWorkspaces = async (req, res) => {
   }
 };
 
+// Get a single workspace by ID
+const getWorkspaceById = async (req, res) => {
+  try {
+    const workspace = await Workspace.findById(req.params.id);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Workspace fetched successfully",
+      workspace,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch workspace",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createWorkspace,
   getWorkspaces,
+  getWorkspaceById,
 };
