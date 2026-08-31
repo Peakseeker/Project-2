@@ -67,7 +67,6 @@ const getWorkspaceById = async (req, res) => {
   }
 };
 
-// Update Workspace
 const updateWorkspace = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -96,9 +95,31 @@ const updateWorkspace = async (req, res) => {
   }
 };
 
+const deleteWorkspace = async (req, res) => {
+  try {
+    const workspace = await Workspace.findByIdAndDelete(req.params.id);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Workspace deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete workspace",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createWorkspace,
   getWorkspaces,
   getWorkspaceById,
   updateWorkspace,
+  deleteWorkspace,
 };
