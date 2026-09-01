@@ -3,11 +3,14 @@ const cors = require("cors");
 require("dotenv").config();
 
 const connectDB = require("./db");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use("/api/notifications", notificationRoutes);
 
 connectDB();
 
