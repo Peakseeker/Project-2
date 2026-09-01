@@ -35,7 +35,6 @@ const cardSchema = new mongoose.Schema(
 
     position: {
       type: Number,
-      required: true,
       default: 0,
     },
 

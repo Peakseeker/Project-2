@@ -26,9 +26,7 @@ const createCard = async (req, res) => {
       position: -1,
     });
 
-    const position = lastCard
-      ? lastCard.position + 1
-      : 0;
+    const position = lastCard ? lastCard.position + 1 : 0;
 
     const card = await Card.create({
       title,
@@ -129,6 +127,7 @@ const updateCard = async (req, res) => {
       "description",
       "priority",
       "dueDate",
+      "assignedTo",
     ];
 
     const updateData = {};
@@ -146,7 +145,7 @@ const updateCard = async (req, res) => {
         new: true,
         runValidators: true,
       }
-    );
+    ).populate("assignedTo", "name email");
 
     if (!card) {
       return res.status(404).json({
@@ -186,6 +185,17 @@ const deleteCard = async (req, res) => {
       });
     }
 
+    // Reorder remaining cards
+    await Card.updateMany(
+      {
+        list: card.list,
+        position: { $gt: card.position },
+      },
+      {
+        $inc: { position: -1 },
+      }
+    );
+
     return res.status(200).json({
       success: true,
       message: "Card deleted successfully",
@@ -201,7 +211,7 @@ const deleteCard = async (req, res) => {
 };
 
 // ==============================
-// MOVE CARD
+// MOVE / REORDER CARD
 // ==============================
 const moveCard = async (req, res) => {
   try {
@@ -225,10 +235,83 @@ const moveCard = async (req, res) => {
       });
     }
 
-    card.list = destinationListId;
-    card.position = destinationIndex;
+    const sourceListId = card.list.toString();
+    const oldPosition = card.position;
 
-    await card.save();
+    // =====================================
+    // CASE 1: SAME LIST REORDER
+    // =====================================
+    if (sourceListId === destinationListId) {
+      // Moving down
+      if (destinationIndex > oldPosition) {
+        await Card.updateMany(
+          {
+            list: destinationListId,
+            position: {
+              $gt: oldPosition,
+              $lte: destinationIndex,
+            },
+            _id: { $ne: cardId },
+          },
+          {
+            $inc: { position: -1 },
+          }
+        );
+      }
+
+      // Moving up
+      if (destinationIndex < oldPosition) {
+        await Card.updateMany(
+          {
+            list: destinationListId,
+            position: {
+              $gte: destinationIndex,
+              $lt: oldPosition,
+            },
+            _id: { $ne: cardId },
+          },
+          {
+            $inc: { position: 1 },
+          }
+        );
+      }
+
+      card.position = destinationIndex;
+
+      await card.save();
+    }
+
+    // =====================================
+    // CASE 2: DIFFERENT LIST
+    // =====================================
+    else {
+      // Close gap in source list
+      await Card.updateMany(
+        {
+          list: sourceListId,
+          position: { $gt: oldPosition },
+        },
+        {
+          $inc: { position: -1 },
+        }
+      );
+
+      // Make space in destination list
+      await Card.updateMany(
+        {
+          list: destinationListId,
+          position: { $gte: destinationIndex },
+        },
+        {
+          $inc: { position: 1 },
+        }
+      );
+
+      card.list = destinationListId;
+      card.position = destinationIndex;
+
+      await card.save();
+    }
 
     return res.status(200).json({
       success: true,
@@ -283,6 +366,8 @@ const assignMember = async (req, res) => {
     card.assignedTo.push(userId);
 
     await card.save();
+
+    await card.populate("assignedTo", "name email");
 
     return res.status(200).json({
       success: true,

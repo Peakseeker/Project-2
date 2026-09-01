@@ -1,4 +1,5 @@
 const List = require("../models/List");
+const Card = require("../models/Card");
 
 // ==============================
 // CREATE LIST
@@ -14,9 +15,10 @@ const createList = async (req, res) => {
       });
     }
 
-    // Get last list position for this board
-    const lastList = await List.findOne({ board })
-      .sort({ position: -1 });
+    // Get last list position
+    const lastList = await List.findOne({ board }).sort({
+      position: -1,
+    });
 
     const position = lastList
       ? lastList.position + 1
@@ -44,7 +46,7 @@ const createList = async (req, res) => {
 };
 
 // ==============================
-// GET ALL LISTS BY BOARD
+// GET LISTS BY BOARD
 // ==============================
 const getListsByBoard = async (req, res) => {
   try {
@@ -52,7 +54,9 @@ const getListsByBoard = async (req, res) => {
 
     const lists = await List.find({
       board: boardId,
-    }).sort({ position: 1 });
+    }).sort({
+      position: 1,
+    });
 
     return res.status(200).json({
       success: true,
@@ -70,12 +74,49 @@ const getListsByBoard = async (req, res) => {
 };
 
 // ==============================
+// GET SINGLE LIST
+// ==============================
+const getListById = async (req, res) => {
+  try {
+    const { listId } = req.params;
+
+    const list = await List.findById(listId);
+
+    if (!list) {
+      return res.status(404).json({
+        success: false,
+        message: "List not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: list,
+    });
+  } catch (error) {
+    console.error("Get List Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch list",
+    });
+  }
+};
+
+// ==============================
 // UPDATE LIST
 // ==============================
 const updateList = async (req, res) => {
   try {
     const { listId } = req.params;
     const { title } = req.body;
+
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        message: "Title is required",
+      });
+    }
 
     const list = await List.findByIdAndUpdate(
       listId,
@@ -124,9 +165,14 @@ const deleteList = async (req, res) => {
       });
     }
 
+    // Delete all cards inside the list
+    await Card.deleteMany({
+      list: listId,
+    });
+
     return res.status(200).json({
       success: true,
-      message: "List deleted successfully",
+      message: "List and its cards deleted successfully",
     });
   } catch (error) {
     console.error("Delete List Error:", error);
@@ -138,9 +184,54 @@ const deleteList = async (req, res) => {
   }
 };
 
+// ==============================
+// MOVE LIST
+// ==============================
+const moveList = async (req, res) => {
+  try {
+    const { listId } = req.params;
+    const { destinationIndex } = req.body;
+
+    if (destinationIndex === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "destinationIndex is required",
+      });
+    }
+
+    const list = await List.findById(listId);
+
+    if (!list) {
+      return res.status(404).json({
+        success: false,
+        message: "List not found",
+      });
+    }
+
+    list.position = destinationIndex;
+
+    await list.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "List moved successfully",
+      data: list,
+    });
+  } catch (error) {
+    console.error("Move List Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to move list",
+    });
+  }
+};
+
 module.exports = {
   createList,
   getListsByBoard,
+  getListById,
   updateList,
   deleteList,
+  moveList,
 };

@@ -3,22 +3,42 @@ const express = require("express");
 const {
   createList,
   getListsByBoard,
+  getListById,
   updateList,
   deleteList,
+  moveList,
 } = require("../controllers/listController");
 
 const router = express.Router();
 
-// Create List
+// ==============================
+// CREATE LIST
+// ==============================
 router.post("/", createList);
 
-// Get All Lists by Board
+// ==============================
+// GET LISTS BY BOARD
+// ==============================
 router.get("/board/:boardId", getListsByBoard);
 
-// Update List
+// ==============================
+// GET SINGLE LIST
+// ==============================
+router.get("/:listId", getListById);
+
+// ==============================
+// UPDATE LIST
+// ==============================
 router.patch("/:listId", updateList);
 
-// Delete List
+// ==============================
+// DELETE LIST
+// ==============================
 router.delete("/:listId", deleteList);
+
+// ==============================
+// MOVE LIST
+// ==============================
+router.patch("/:listId/move", moveList);
 
 module.exports = router;

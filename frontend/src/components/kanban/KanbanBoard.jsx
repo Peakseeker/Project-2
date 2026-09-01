@@ -1,95 +1,66 @@
 import { useEffect, useState } from "react";
-import { DragDropContext } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable } from "react-beautiful-dnd";
 
 import BoardList from "./BoardList";
 
 import {
   getListsByBoard,
-  createList,
-} from "../../services/api/listApi";
-
-import {
   getCardsByList,
   moveCard,
-} from "../../services/api/cardApi";
+} from "../../services/api/kanbanApi";
 
 const KanbanBoard = ({ boardId }) => {
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const [showAddList, setShowAddList] = useState(false);
-  const [newListTitle, setNewListTitle] = useState("");
-  const [creatingList, setCreatingList] = useState(false);
+  // ==============================
+  // FETCH BOARD DATA
+  // ==============================
+  useEffect(() => {
+    if (!boardId) return;
 
-  // Fetch Lists + Cards
+    fetchBoardData();
+  }, [boardId]);
+
   const fetchBoardData = async () => {
     try {
       setLoading(true);
-      setError("");
 
+      // Fetch lists
       const listsResponse = await getListsByBoard(boardId);
-      const boardLists = listsResponse.data || listsResponse;
 
+      const fetchedLists = listsResponse.data || [];
+
+      // Fetch cards for every list
       const listsWithCards = await Promise.all(
-        boardLists.map(async (list) => {
+        fetchedLists.map(async (list) => {
           const cardsResponse = await getCardsByList(list._id);
-          const cards = cardsResponse.data || cardsResponse;
 
           return {
             ...list,
-            cards,
+            cards: cardsResponse.data || [],
           };
         })
       );
 
       setLists(listsWithCards);
     } catch (error) {
-      console.error("Error fetching board:", error);
-      setError("Failed to load board data");
+      console.error("Failed to fetch board:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (boardId) {
-      fetchBoardData();
-    }
-  }, [boardId]);
-
-  // Create List
-  const handleCreateList = async () => {
-    if (!newListTitle.trim()) return;
-
-    try {
-      setCreatingList(true);
-
-      await createList({
-        title: newListTitle.trim(),
-        board: boardId,
-      });
-
-      setNewListTitle("");
-      setShowAddList(false);
-
-      fetchBoardData();
-    } catch (error) {
-      console.error("Error creating list:", error);
-      alert("Failed to create list");
-    } finally {
-      setCreatingList(false);
-    }
-  };
-
-  // Drag & Drop Handler
+  // ==============================
+  // DRAG END
+  // ==============================
   const handleDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
 
     // Dropped outside board
     if (!destination) return;
 
-    // No position change
+    // Same position
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
@@ -97,143 +68,91 @@ const KanbanBoard = ({ boardId }) => {
       return;
     }
 
-    const sourceListId = source.droppableId;
-    const destinationListId = destination.droppableId;
+    // Save previous state for rollback
+    const previousLists = structuredClone(lists);
 
     // Optimistic UI Update
     const updatedLists = [...lists];
 
-    const sourceList = updatedLists.find(
-      (list) => list._id === sourceListId
+    const sourceListIndex = updatedLists.findIndex(
+      (list) => list._id === source.droppableId
     );
 
-    const destinationList = updatedLists.find(
-      (list) => list._id === destinationListId
+    const destinationListIndex = updatedLists.findIndex(
+      (list) => list._id === destination.droppableId
     );
 
-    if (!sourceList || !destinationList) return;
+    const sourceCards = [...updatedLists[sourceListIndex].cards];
+    const [movedCard] = sourceCards.splice(source.index, 1);
 
-    // Remove card from source
-    const [movedCard] = sourceList.cards.splice(
-      source.index,
-      1
-    );
+    // Same list
+    if (sourceListIndex === destinationListIndex) {
+      sourceCards.splice(destination.index, 0, movedCard);
 
-    // Add card to destination
-    destinationList.cards.splice(
-      destination.index,
-      0,
-      movedCard
-    );
+      updatedLists[sourceListIndex] = {
+        ...updatedLists[sourceListIndex],
+        cards: sourceCards,
+      };
+    } else {
+      const destinationCards = [
+        ...updatedLists[destinationListIndex].cards,
+      ];
 
+      destinationCards.splice(destination.index, 0, movedCard);
+
+      updatedLists[sourceListIndex] = {
+        ...updatedLists[sourceListIndex],
+        cards: sourceCards,
+      };
+
+      updatedLists[destinationListIndex] = {
+        ...updatedLists[destinationListIndex],
+        cards: destinationCards,
+      };
+    }
+
+    // Update UI immediately
     setLists(updatedLists);
 
     try {
-      // Update Backend
-      await moveCard(draggableId, {
-        listId: destinationListId,
-        position: destination.index,
-      });
+      // Update backend
+      await moveCard(
+        draggableId,
+        destination.droppableId,
+        destination.index
+      );
     } catch (error) {
-      console.error("Error moving card:", error);
+      console.error("Failed to move card:", error);
 
-      // Restore correct state if API fails
-      fetchBoardData();
-      alert("Failed to move card");
+      // Rollback if API fails
+      setLists(previousLists);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[70vh]">
-        <p className="text-gray-500">
-          Loading board...
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-[70vh]">
-        <p className="text-red-500">{error}</p>
-      </div>
-    );
+    return <div>Loading board...</div>;
   }
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="w-full overflow-x-auto">
-        <div className="flex gap-4 p-4 min-h-[70vh] items-start">
-
-          {/* Lists */}
-          {lists.map((list) => (
-            <BoardList
-              key={list._id}
-              list={list}
-              cards={list.cards || []}
-              refreshBoard={fetchBoardData}
-            />
-          ))}
-
-          {/* Add New List */}
-          <div className="w-72 min-w-72">
-            {showAddList ? (
-              <div className="bg-gray-100 rounded-xl p-3">
-                <input
-                  type="text"
-                  value={newListTitle}
-                  onChange={(e) =>
-                    setNewListTitle(e.target.value)
-                  }
-                  placeholder="Enter list title..."
-                  autoFocus
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleCreateList();
-                    }
-
-                    if (e.key === "Escape") {
-                      setShowAddList(false);
-                      setNewListTitle("");
-                    }
-                  }}
-                />
-
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={handleCreateList}
-                    disabled={creatingList}
-                    className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {creatingList
-                      ? "Creating..."
-                      : "Add List"}
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setShowAddList(false);
-                      setNewListTitle("");
-                    }}
-                    className="text-gray-500 px-2 text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowAddList(true)}
-                className="w-full bg-gray-100 hover:bg-gray-200 rounded-xl p-3 text-left text-gray-600 font-medium transition"
+      <div className="flex gap-4 overflow-x-auto p-4">
+        {lists.map((list) => (
+          <Droppable
+            key={list._id}
+            droppableId={list._id}
+          >
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
               >
-                + Add another list
-              </button>
-            )}
-          </div>
+                <BoardList list={list} />
 
-        </div>
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        ))}
       </div>
     </DragDropContext>
   );

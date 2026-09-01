@@ -1,23 +1,21 @@
-import axios from "axios";
+import api from "./axios";
 
-const API_URL = "http://localhost:5000/api/lists";
-
-export const getListsByBoard = async (boardId) => {
-  const response = await axios.get(`${API_URL}/board/${boardId}`);
-  return response.data;
+export const createList = (data) => {
+  return api.post("/lists", data);
 };
 
-export const createList = async (data) => {
-  const response = await axios.post(API_URL, data);
-  return response.data;
+export const getListsByBoard = (boardId) => {
+  return api.get(`/lists/board/${boardId}`);
 };
 
-export const updateList = async (listId, data) => {
-  const response = await axios.patch(`${API_URL}/${listId}`, data);
-  return response.data;
+export const updateList = (listId, data) => {
+  return api.patch(`/lists/${listId}`, data);
 };
 
-export const deleteList = async (listId) => {
-  const response = await axios.delete(`${API_URL}/${listId}`);
-  return response.data;
+export const deleteList = (listId) => {
+  return api.delete(`/lists/${listId}`);
+};
+
+export const moveList = (listId, data) => {
+  return api.patch(`/lists/${listId}/move`, data);
 };
