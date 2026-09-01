@@ -179,6 +179,28 @@ const removeMember = async (req, res) => {
   }
 };
 
+const getWorkspaceMembers = async (req, res) => {
+  try {
+    const workspace = await Workspace.findById(req.params.id);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Workspace members fetched successfully",
+      members: workspace.members,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch workspace members",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createWorkspace,
   getWorkspaces,
@@ -187,4 +209,5 @@ module.exports = {
   deleteWorkspace,
   addMember,
   removeMember,
+  getWorkspaceMembers,
 };
