@@ -161,6 +161,23 @@ const removeMember = async (req, res) => {
       });
     }
 
+    // Prevent removing the workspace owner
+    if (workspace.owner.toString() === userId) {
+      return res.status(400).json({
+        message: "Workspace owner cannot be removed",
+      });
+    }
+
+    const isMember = workspace.members.some(
+      (member) => member.toString() === userId
+    );
+
+    if (!isMember) {
+      return res.status(404).json({
+        message: "User is not a member of this workspace",
+      });
+    }
+
     workspace.members = workspace.members.filter(
       (member) => member.toString() !== userId
     );
