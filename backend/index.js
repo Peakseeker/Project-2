@@ -4,22 +4,29 @@ require("dotenv").config();
 
 const connectDB = require("./db");
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
+// Routes
+const notificationRoutes = require("./routes/notificationRoutes");
 const workspaceRoutes = require("./routes/workspaceRoutes");
 const boardRoutes = require("./routes/boardRoutes");
 const listRoutes = require("./routes/listRoutes");
 const cardRoutes = require("./routes/cardRoutes");
 
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Database Connection
 connectDB();
 
+// Home Route
 app.get("/", (req, res) => {
   res.send("Backend is running successfully!");
 });
 
+// API Routes
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/boards", boardRoutes);
 app.use("/api/lists", listRoutes);
