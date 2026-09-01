@@ -116,10 +116,98 @@ const deleteWorkspace = async (req, res) => {
   }
 };
 
+const addMember = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    const workspace = await Workspace.findById(req.params.id);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    if (workspace.members.some((member) => member.toString() === userId)) {
+      return res.status(400).json({
+        message: "User is already a member",
+      });
+    }
+
+    workspace.members.push(userId);
+    await workspace.save();
+
+    res.status(200).json({
+      message: "Member added successfully",
+      workspace,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to add member",
+      error: error.message,
+    });
+  }
+};
+
+const removeMember = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    const workspace = await Workspace.findById(req.params.id);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    workspace.members = workspace.members.filter(
+      (member) => member.toString() !== userId
+    );
+
+    await workspace.save();
+
+    res.status(200).json({
+      message: "Member removed successfully",
+      workspace,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to remove member",
+      error: error.message,
+    });
+  }
+};
+
+const getWorkspaceMembers = async (req, res) => {
+  try {
+    const workspace = await Workspace.findById(req.params.id);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Workspace members fetched successfully",
+      members: workspace.members,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch workspace members",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createWorkspace,
   getWorkspaces,
   getWorkspaceById,
   updateWorkspace,
   deleteWorkspace,
+  addMember,
+  removeMember,
+  getWorkspaceMembers,
 };
