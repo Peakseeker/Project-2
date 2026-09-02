@@ -120,6 +120,12 @@ const addMember = async (req, res) => {
   try {
     const { userId } = req.body;
 
+    if (!userId) {
+      return res.status(400).json({
+        message: "User ID is required",
+      });
+    }
+
     const workspace = await Workspace.findById(req.params.id);
 
     if (!workspace) {
@@ -161,7 +167,6 @@ const removeMember = async (req, res) => {
       });
     }
 
-    // Prevent removing the workspace owner
     if (workspace.owner.toString() === userId) {
       return res.status(400).json({
         message: "Workspace owner cannot be removed",
