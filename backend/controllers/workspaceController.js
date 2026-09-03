@@ -1,4 +1,5 @@
 const Workspace = require("../models/Workspace");
+const mongoose = require("mongoose");
 
 const createWorkspace = async (req, res) => {
   try {
@@ -47,7 +48,15 @@ const getWorkspaces = async (req, res) => {
 
 const getWorkspaceById = async (req, res) => {
   try {
-    const workspace = await Workspace.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid workspace ID",
+      });
+    }
+
+    const workspace = await Workspace.findById(id);
 
     if (!workspace) {
       return res.status(404).json({
