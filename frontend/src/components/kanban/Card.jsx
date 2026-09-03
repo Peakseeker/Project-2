@@ -1,5 +1,6 @@
 import { Draggable } from "react-beautiful-dnd";
 
+// Card component to display individual card details
 const Card = ({ card, index }) => {
   const priorityStyles = {
     low: "bg-green-100 text-green-700",
