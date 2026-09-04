@@ -1,5 +1,6 @@
 import Card from "./Card";
 
+// BoardList component to display a list of cards
 const BoardList = ({ list }) => {
   return (
     <div className="w-72 shrink-0 rounded-lg bg-gray-100 p-3">
