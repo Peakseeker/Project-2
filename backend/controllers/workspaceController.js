@@ -78,10 +78,17 @@ const getWorkspaceById = async (req, res) => {
 
 const updateWorkspace = async (req, res) => {
   try {
+    const { id } = req.params;
     const { name, description } = req.body;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid workspace ID",
+      });
+    }
+
     const workspace = await Workspace.findByIdAndUpdate(
-      req.params.id,
+      id,
       { name, description },
       { new: true, runValidators: true }
     );
