@@ -17,6 +17,7 @@ const boardRoutes = require("./routes/boardRoutes");
 const listRoutes = require("./routes/listRoutes");
 const cardRoutes = require("./routes/cardRoutes");
 const searchRoutes = require("./routes/searchRoutes");
+const transactionRoutes = require("./routes/transactionRoutes");
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use("/api/boards", boardRoutes);
 app.use("/api/lists", listRoutes);
 app.use("/api/cards", cardRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/transactions", transactionRoutes);
 
 const PORT = process.env.PORT || 5000;
 
