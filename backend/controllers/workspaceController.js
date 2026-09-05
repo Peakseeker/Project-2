@@ -113,7 +113,15 @@ const updateWorkspace = async (req, res) => {
 
 const deleteWorkspace = async (req, res) => {
   try {
-    const workspace = await Workspace.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid workspace ID",
+      });
+    }
+
+    const workspace = await Workspace.findByIdAndDelete(id);
 
     if (!workspace) {
       return res.status(404).json({
