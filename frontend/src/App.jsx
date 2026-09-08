@@ -67,7 +67,7 @@ function App() {
       alert("Cannot connect to the backend server");
     }
   };
-
+//return
   return (
     <div className="app">
       <header className="header">
