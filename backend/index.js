@@ -42,6 +42,7 @@ app.use("/api/cards", cardRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/transactions", transactionRoutes);
 
+// Server Port
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
