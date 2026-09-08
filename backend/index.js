@@ -25,7 +25,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database Connection
+const workspaceRoutes = require("./routes/workspaceRoutes");
+const boardRoutes = require("./routes/boardRoutes");
+const userRoutes = require("./routes/userRoutes");
+
 connectDB();
 
 // Home Route
@@ -37,10 +40,7 @@ app.get("/", (req, res) => {
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/boards", boardRoutes);
-app.use("/api/lists", listRoutes);
-app.use("/api/cards", cardRoutes);
-app.use("/api/search", searchRoutes);
-app.use("/api/transactions", transactionRoutes);
+app.use("/api/users", userRoutes);
 
 // Server Port
 const PORT = process.env.PORT || 5000;
